@@ -1,0 +1,17 @@
+# Gradle Build artifacts
+.gradle/
+build/
+
+# IDE settings
+.idea/
+*.iml
+*.iws
+
+# Operating system files
+.DS_Store
+Thumbs.db
+
+# Environment variables & secrets (Crucial for AI keys later!)
+.env
+.env.local
+.env.*.local
