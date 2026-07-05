@@ -12,12 +12,6 @@ public class VectorStoreConfig {
 
     @Bean
     public VectorStore vectorStore(JdbcTemplate jdbcTemplate, EmbeddingModel embeddingModel) {
-        return new PgVectorStore.builder()
-                .jdbcTemplate(jdbcTemplate)
-                .embeddingModel(embeddingModel)
-                .dimensions(1536) // OpenAI default text-embedding-ada-002 dimensions
-                .distanceType(PgVectorStore.PgDistanceType.COSINE)
-                .initializeSchema(true) // Automatically creates the vector table structures on startup
-                .build();
+        return new PgVectorStore(jdbcTemplate, embeddingModel);
     }
 }
