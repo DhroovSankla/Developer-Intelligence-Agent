@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  vector-db:
+    image: pgvector/pgvector:pg16
+    container_name: developer_intelligence_vector_db
+    environment:
+      POSTGRES_USER: ${VECTOR_DB_USER}
+      POSTGRES_PASSWORD: ${VECTOR_DB_PASSWORD}
+      POSTGRES_DB: ai_knowledge_vector
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgvector_data:/var/lib/postgresql/data
+    networks:
+      - ai-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB -p 5432"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  ai-agent-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: developer_intelligence_agent_app
+    ports:
+      - "8083:8083"
+    environment:
+      # Inject the variables directly from local .env file into the container
+      VECTOR_DB_URL: jdbc:postgresql://vector-db:5432/ai_knowledge_vector
+      VECTOR_DB_USER: ${VECTOR_DB_USER}
+      VECTOR_DB_PASSWORD: ${VECTOR_DB_PASSWORD}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+    depends_on:
+      vector-db:
+        condition: service_healthy
+    networks:
+      - ai-network
+
+volumes:
+  pgvector_data:
+
+networks:
+  ai-network:
+    driver: bridge
