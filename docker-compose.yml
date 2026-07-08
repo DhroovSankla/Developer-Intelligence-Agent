@@ -11,7 +11,7 @@ services:
     ports:
       - "5433:5432"
     volumes:
-      - pgvector_data:/var/lib/postgresql/data
+      - pgvector_data_v2:/var/lib/postgresql/data
     networks:
       - ai-network
     healthcheck:
@@ -26,13 +26,12 @@ services:
       dockerfile: Dockerfile
     container_name: developer_intelligence_agent_app
     ports:
-      - "8083:8083"
+      - "8083:8080"
     environment:
       # Inject the variables directly from local .env file into the container
       VECTOR_DB_URL: jdbc:postgresql://vector-db:5432/ai_knowledge_vector
       VECTOR_DB_USER: ${VECTOR_DB_USER}
       VECTOR_DB_PASSWORD: ${VECTOR_DB_PASSWORD}
-      OPENAI_API_KEY: ${OPENAI_API_KEY}
     depends_on:
       vector-db:
         condition: service_healthy
@@ -40,7 +39,7 @@ services:
       - ai-network
 
 volumes:
-  pgvector_data:
+  pgvector_data_v2:
 
 networks:
   ai-network:
