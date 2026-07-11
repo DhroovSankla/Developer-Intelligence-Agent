@@ -1,0 +1,8 @@
+global:
+  scrape_interval: 5s # Scrape metrics every 5 seconds for real-time tracking
+
+scrape_configs:
+  - job_name: 'spring-boot-ai-agent'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['ai-agent-service:8080'] # Points directly to our app inside the network
