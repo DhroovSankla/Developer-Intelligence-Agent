@@ -25,4 +25,23 @@ public class DeveloperProfile {
     public String getRole() { return role; }
     public String getFocus() { return focus; }
 
+    public void setProfileId(String profileId ) {
+        this.profileId = profileId;
+    }
+
+    public void setDeveloperName(String developerName) {
+        this.developerName = developerName;
+    }
+
+    public void setSkillsContent(String skillsContent) {
+        this.skillsContent = skillsContent;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
+    }
+
+    public void setFocus(String focus) {
+        this.focus = focus;
+    }
 }
