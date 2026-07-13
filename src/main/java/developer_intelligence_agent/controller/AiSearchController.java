@@ -1,12 +1,10 @@
 package developer_intelligence_agent.controller;
 
 import developer_intelligence_agent.service.AiSearchService;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
+@CrossOrigin(origins = "http://localhost:5173")
 @RequestMapping("/api/ai/search")
 public class AiSearchController {
 
