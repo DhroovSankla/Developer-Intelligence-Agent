@@ -1,0 +1,65 @@
+services:
+  postgres-db:
+    image: ankane/pgvector:v0.5.1
+    container_name: prod-vector-db
+    environment:
+      POSTGRES_DB: ai_knowledge_vector
+      POSTGRES_USER: ${VECTOR_DB_USER}
+      POSTGRES_PASSWORD: ${VECTOR_DB_PASSWORD}
+    # For production security, we bind PostgreSQL only to localhost on the host machine.
+    # If the backend is running in docker, it communicates via the internal 'intelligence-net' bridge network.
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - pgvector_prod_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - intelligence-net
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-q", "-d", "developer_intelligence", "-U", "ai_operator" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  ai-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: prod-ai-backend
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_DATASOURCE_URL: ${VECTOR_DB_URL}
+      SPRING_DATASOURCE_USERNAME: ${VECTOR_DB_USER}
+      SPRING_DATASOURCE_PASSWORD: ${VECTOR_DB_PASSWORD}
+      SPRING_AI_OLLAMA_BASE_URL: http://host.docker.internal:11434
+      SPRING_AI_OLLAMA_CHAT_OPTIONS_MODEL: qwen2:1.5b
+    ports:
+      - "8083:8080"
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+    networks:
+      - intelligence-net
+
+  frontend-ui:
+    build:
+      context: ./developer-intelligence-ui
+      dockerfile: Dockerfile.prod
+    container_name: prod-ui-deck
+    ports:
+      - "80:80"
+    depends_on:
+      - ai-backend
+    restart: unless-stopped
+    networks:
+      - intelligence-net
+
+networks:
+  intelligence-net:
+    driver: bridge
+
+volumes:
+  pgvector_prod_data:
