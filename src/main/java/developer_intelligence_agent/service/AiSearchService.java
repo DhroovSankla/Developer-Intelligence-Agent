@@ -26,37 +26,34 @@ public class AiSearchService {
     }
 
     public String searchAndAnalyze(String searchQuery) {
-        // 1. Relational SQL Keyword Search using your JPA repository
-        List<DeveloperProfile> keywordResults = profileRepository.searchByKeyword(searchQuery);
-        String keywordContext = keywordResults.stream()
-                .map(p -> String.format("Developer: %s (ID: %s)\nSkills: %s", p.getDeveloperName(), p.getProfileId(), p.getSkillsContent()))
-                .collect(Collectors.joining("\n---\n"));
-
-        // 2. Semantic Vector Search using PgVector
+        // 1. Semantic Vector Search using PgVector
         List<Document> vectorResults = vectorStore.similaritySearch(
                 SearchRequest.query(searchQuery).withTopK(3)
         );
-        String vectorContext = vectorResults.stream()
-                .map(Document::getContent)
-                .collect(Collectors.joining("\n---\n"));
 
-        // 3. Blend both context tracks into a single context prompt block
-        String blendedContext = "--- KEYWORD MATCHES ---\n" + keywordContext +
-                "\n\n--- SEMANTIC MATCHES ---\n" + vectorContext;
+        StringBuilder resultBuilder = new StringBuilder();
 
-        // 4. Send the blended context directly to Qwen for analysis
-        return chatClient.prompt()
-                .user(u -> u.text("""
-                    You are an expert technical recruiter analyzer. Use the blended context below to answer the query.
-                    
-                    Blended Context:
-                    {context}
-                    
-                    User Query: {query}
-                    """)
-                        .param("context", blendedContext)
-                        .param("query", searchQuery))
-                .call()
-                .content();
+        for (Document doc : vectorResults) {
+            String devName = doc.getMetadata() != null ? doc.getMetadata().getOrDefault("developerName", "Anonymous").toString() : "Anonymous";
+            String devId = doc.getMetadata() != null ? doc.getMetadata().getOrDefault("profileId", "UNKNOWN").toString() : "UNKNOWN";
+            String skills = doc.getContent();
+
+            String prompt = String.format("""
+                You are an expert technical recruiter. Evaluate if the candidate matches the recruitment query.
+                
+                Candidate Name: %s (ID: %s)
+                Candidate Skills: %s
+                Recruitment Query: %s
+                
+                Format your response EXACTLY as:
+                - Candidate: %s (ID: %s)
+                - Match? [Yes or No] (Explanation: [1-sentence explanation of why their skills match or do not match the query])
+                """, devName, devId, skills, searchQuery, devName, devId);
+
+            String evaluation = chatClient.prompt().user(prompt).call().content();
+            resultBuilder.append(evaluation.trim()).append("\n\n");
+        }
+
+        return resultBuilder.toString();
     }
 }
